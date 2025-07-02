@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>動画投稿シミュレーター</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #202020;
+      color: white;
+      padding: 10px 20px;
+      font-size: 18px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      margin: 10px 0;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .video-preview {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .video-thumbnail {
+      width: 320px;
+      height: 180px;
+      background: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .video-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .video-info {
+      flex: 1;
+    }
+    .video-type button {
+      margin-right: 10px;
+    }
+    .views {
+      font-size: 20px;
+      color: #606060;
+      margin-top: 10px;
+    }
+    small {
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+<header>動画投稿シミュレーター</header>
+
+<div class="container" id="step1">
+  <h2>チャンネル情報を入力</h2>
+  <label>チャンネル名</label>
+  <input type="text" id="channelName" placeholder="チャンネル名（日本語・英数字）" />
+  <label>登録者数 <small>（一人以上）</small></label>
+  <input type="number" id="subscribers" placeholder="登録者数（数字）" min="1" />
+  <button onclick="goToNext()">完了</button>
+</div>
+
+<div class="container" id="step2" style="display: none;">
+  <h2 id="channelTitle"></h2>
+
+  <label>画像:</label><br />
+  <input type="file" id="imageInput" accept="image/*" />
+  <div class="video-preview">
+    <div class="video-thumbnail" id="videoThumb">
+      <span style="color:#888;">サムネイル</span>
+    </div>
+    <div class="video-info">
+      <div class="video-type">
+        <p>動画タイプ:</p>
+        <button onclick="selectType('short')">ショート動画</button>
+        <button onclick="selectType('normal')">通常動画</button>
+      </div>
+      <button onclick="startPost()">投稿！！</button>
+      <div class="views" id="views">○○○○○ 回</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let channelName = '';
+  let subscribers = 0;
+  let videoType = null;
+  let interval = null;
+  let timeout = null;
+  let elapsedSeconds = 0;
+  let a = 0;
+
+  function goToNext() {
+    channelName = document.getElementById('channelName').value;
+    subscribers = parseInt(document.getElementById('subscribers').value);
+    if (!channelName || isNaN(subscribers) || subscribers < 1) {
+      alert('チャンネル名と登録者数（一人以上）を正しく入力してください。');
+      return;
+    }
+
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+    document.getElementById('channelTitle').textContent = channelName + ' の動画投稿';
+  }
+
+  document.getElementById('imageInput').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const thumb = document.getElementById('videoThumb');
+        thumb.innerHTML = '<img src="' + event.target.result + '" alt="サムネイル" />';
+
+        const candidates = [subscribers * 0.1, subscribers * 0.05, subscribers * 0.01];
+        const naturals = candidates.filter(x => Number.isInteger(x));
+
+        if (naturals.length > 0) {
+          a = naturals[Math.floor(Math.random() * naturals.length)];
+        } else {
+          const fallback = [1, 2, 3];
+          a = fallback[Math.floor(Math.random() * fallback.length)];
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  function selectType(type) {
+    videoType = type;
+    document.querySelectorAll('.video-type button').forEach(btn => btn.disabled = false);
+    event.target.disabled = true;
+  }
+
+  function startPost() {
+    if (!videoType) {
+      alert('動画タイプを選んでください。');
+      return;
+    }
+
+    if (a === 0) {
+      alert('まずサムネイル画像を選んでください。');
+      return;
+    }
+
+    let currentViews = (videoType === 'normal') ? subscribers : 0;
+    elapsedSeconds = 0;
+    document.getElementById('views').textContent = `${Math.floor(currentViews)} 回（${elapsedSeconds} 秒経過）`;
+
+    clearInterval(interval);
+    clearTimeout(timeout);
+
+    interval = setInterval(() => {
+      currentViews += a;
+      elapsedSeconds += 1;
+      document.getElementById('views').textContent = `${Math.floor(currentViews)} 回（${elapsedSeconds} 秒経過）`;
+    }, 1000);
+
+    timeout = setTimeout(() => clearInterval(interval), 11000); // 11秒で停止
+  }
+</script>
+
+</body>
+</html>
